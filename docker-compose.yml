@@ -1,0 +1,20 @@
+# atc-mail — respuestas automáticas timbrado CTO (IMAP + SMTP)
+#
+#   cp .env.example .env   # completar credenciales
+#   docker compose up -d --build
+
+services:
+  atc-mail:
+    build: .
+    image: atc-mail:latest
+    container_name: atc-mail
+    env_file:
+      - .env
+    volumes:
+      - atc-mail-data:/app/data
+    environment:
+      PROCESSED_DB_PATH: /app/data/processed.db
+    restart: unless-stopped
+
+volumes:
+  atc-mail-data:

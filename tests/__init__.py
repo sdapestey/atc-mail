@@ -1,0 +1,1 @@
+"""Tests atc-mail."""
