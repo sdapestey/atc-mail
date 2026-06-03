@@ -6,7 +6,7 @@ Microservicio que responde automáticamente consultas de **timbrado CTO** por co
 
 1. Lee el buzón configurado (`MAIL_USER`) buscando mails con asunto `TIMBRADO CTO <FATC>`.
 2. Consulta inventario en Postgres (misma base que `atc-noc-suite`).
-3. Responde al **remitente** y a los contactos en **Cc** con tabla de puertos, dirección, coordenadas y firma corporativa.
+3. Responde al **remitente** y a contactos en **Cc** solo si también son `@tmoviles.com.ar` o `@americantower.com` (no se copia a Gmail u otros externos en Cc).
 
 ## Remitentes permitidos
 

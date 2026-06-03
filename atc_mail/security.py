@@ -17,14 +17,18 @@ def is_own_mailbox(from_header: str | None) -> bool:
     return bool(addr and own and addr == own)
 
 
-def sender_allowed(from_header: str | None) -> bool:
-    if is_own_mailbox(from_header):
+def email_domain_allowed(email: str) -> bool:
+    addr = (email or "").strip().lower()
+    if not addr or "@" not in addr:
         return False
     allowed = get_allowed_sender_domains()
     if not allowed:
         return True
-    addr = sender_address(from_header)
-    if not addr or "@" not in addr:
-        return False
     domain = addr.rsplit("@", 1)[-1]
     return domain in allowed
+
+
+def sender_allowed(from_header: str | None) -> bool:
+    if is_own_mailbox(from_header):
+        return False
+    return email_domain_allowed(sender_address(from_header))
