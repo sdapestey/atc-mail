@@ -7,7 +7,8 @@ from atc_mail.cto_inventory import (
 
 
 def test_format_empty_cto():
-    body = format_timbrado_reply("ES01-FATC-8-999999", [])
+    ubicacion = CtoUbicacion(direccion=None, lat=None, lon=None)
+    body = format_timbrado_reply("ES01-FATC-8-999999", [], ubicacion=ubicacion)
     assert "Sin registros para ES01-FATC-8-999999" in body
     assert "FREE / RESERVED / IN SERVICE" in body
 

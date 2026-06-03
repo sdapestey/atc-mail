@@ -5,7 +5,12 @@ import logging
 import sys
 import time
 
-from atc_mail.config import dry_run, log_level, poll_interval_seconds
+from atc_mail.config import (
+    dry_run,
+    get_allowed_sender_domains,
+    log_level,
+    poll_interval_seconds,
+)
 from atc_mail.cto_inventory import build_timbrado_reply, consultar_cto_puertos
 from atc_mail.mail_imap import fetch_unseen_mails, mark_seen
 from atc_mail.mail_smtp import send_timbrado_reply
@@ -41,7 +46,11 @@ def process_once() -> int:
             continue
 
         if not sender_allowed(inbound.from_header):
-            logger.info("Remitente no permitido, skip: %s", inbound.from_header)
+            logger.info(
+                "Remitente no permitido (dominios: %s), skip: %s",
+                ", ".join(sorted(get_allowed_sender_domains())),
+                inbound.from_header,
+            )
             if not dry_run():
                 mark_seen(uid)
             continue

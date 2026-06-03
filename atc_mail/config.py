@@ -12,6 +12,9 @@ try:
 except ImportError:
     pass
 
+# Dominios remitentes permitidos si MAIL_ALLOWED_SENDER_DOMAINS no está en .env
+DEFAULT_ALLOWED_SENDER_DOMAINS = "tmoviles.com.ar,americantower.com"
+
 
 def _database_from_url(url: str) -> dict:
     p = urlparse(url)
@@ -46,9 +49,7 @@ def get_mail_config() -> dict:
         "imap_port": int(os.environ.get("MAIL_IMAP_PORT", "993")),
         "smtp_host": os.environ.get("MAIL_SMTP_HOST", "smtp.office365.com").strip(),
         "smtp_port": int(os.environ.get("MAIL_SMTP_PORT", "587")),
-        "user": os.environ.get(
-            "MAIL_USER", "sebastian.apestey@americantower.com"
-        ).strip(),
+        "user": os.environ.get("MAIL_USER", "").strip(),
         "password": os.environ.get("MAIL_PASSWORD", ""),
     }
 
@@ -56,7 +57,7 @@ def get_mail_config() -> dict:
 def get_allowed_sender_domains() -> frozenset[str]:
     raw = os.environ.get("MAIL_ALLOWED_SENDER_DOMAINS", "").strip()
     if not raw:
-        return frozenset()
+        raw = DEFAULT_ALLOWED_SENDER_DOMAINS
     return frozenset(d.strip().lower() for d in raw.split(",") if d.strip())
 
 
