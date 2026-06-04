@@ -6,20 +6,30 @@ Microservicio que responde automáticamente consultas de **timbrado CTO** por co
 
 1. Lee el buzón configurado (`MAIL_USER`) buscando mails con asunto `TIMBRADO CTO <FATC>`.
 2. Consulta inventario en Postgres (misma base que `atc-noc-suite`).
-3. Responde al **remitente** y a contactos en **Cc** solo si también son `@tmoviles.com.ar` o `@americantower.com` (no se copia a Gmail u otros externos en Cc).
+3. Responde al **remitente (Para)** y pone en **Cc** a Lucas/Facundo (siempre) más otros contactos del Cc entrante en dominios permitidos.
 
-## Remitentes permitidos
+## Remitentes permitidos (From)
 
 Solo se procesan mails cuyo **From** pertenece a:
 
 | Dominio |
 |---------|
 | `tmoviles.com.ar` |
+| `retesar.com` |
 | `americantower.com` |
 
 Cualquier otro dominio se ignora (se registra en log). El propio buzón del bot nunca se procesa (anti-loop).
 
-Configurable con `MAIL_ALLOWED_SENDER_DOMAINS` (coma-separados). Si la variable está vacía en `.env`, se usan los dos dominios anteriores por defecto.
+`MAIL_ALLOWED_SENDER_DOMAINS` — si está vacío, se usan los tres dominios de la tabla.
+
+## Destinatarios de la respuesta
+
+| Campo | Quién |
+|-------|--------|
+| **Para (To)** | Remitente del timbrado |
+| **Cc** | Siempre `lucas.gimenez@americantower.com` y `facundo.vergara@americantower.com`, más cualquier Cc entrante en dominio permitido (sin duplicar) |
+
+`MAIL_ALWAYS_CC` — lista fija (coma-separados). Los externos en Cc del mail entrante (ej. Gmail) no se copian.
 
 ## Formato del mail entrante
 
@@ -64,7 +74,8 @@ cp .env.example .env
 | `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | Postgres (o usar `DATABASE_URL`) |
 | `MAIL_USER` / `MAIL_PASSWORD` | Buzón IMAP/SMTP del bot |
 | `MAIL_IMAP_HOST` / `MAIL_SMTP_HOST` | Servidores (ver `.env.example`) |
-| `MAIL_ALLOWED_SENDER_DOMAINS` | Default: `tmoviles.com.ar,americantower.com` |
+| `MAIL_ALLOWED_SENDER_DOMAINS` | Default: `tmoviles.com.ar,retesar.com,americantower.com` |
+| `MAIL_ALWAYS_CC` | Default: Lucas + Facundo (siempre en Cc de la respuesta) |
 | `DRY_RUN` | `1` = simular sin enviar mail |
 | `POLL_INTERVAL_SECONDS` | Intervalo del worker (default 60) |
 | `PROCESSED_DB_PATH` | SQLite de idempotencia |

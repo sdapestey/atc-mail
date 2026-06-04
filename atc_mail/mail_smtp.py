@@ -63,14 +63,16 @@ def send_timbrado_reply(
     if not cfg["password"]:
         raise RuntimeError("MAIL_PASSWORD no configurado")
 
-    reply_to = collect_reply_recipients(inbound.from_header, inbound.cc_header)
-    if not reply_to:
-        raise ValueError("Sin destinatarios válidos (From/Cc) en mail entrante")
+    recipients = collect_reply_recipients(inbound.from_header, inbound.cc_header)
+    if not recipients.to:
+        raise ValueError("Sin remitente válido en mail entrante")
 
     msg = EmailMessage()
     from_name = get_signature_settings()["from_name"]
     msg["From"] = formataddr((from_name, cfg["user"]))
-    msg["To"] = ", ".join(reply_to)
+    msg["To"] = ", ".join(recipients.to)
+    if recipients.cc:
+        msg["Cc"] = ", ".join(recipients.cc)
     msg["Subject"] = _reply_subject(inbound.subject, cto)
 
     if inbound.message_id:
@@ -90,4 +92,9 @@ def send_timbrado_reply(
         smtp.login(cfg["user"], cfg["password"])
         smtp.send_message(msg)
 
-    logger.info("SMTP reply enviado a %s (CTO %s)", msg["To"], cto)
+    logger.info(
+        "SMTP reply enviado To=%s Cc=%s (CTO %s)",
+        msg["To"],
+        msg.get("Cc", ""),
+        cto,
+    )

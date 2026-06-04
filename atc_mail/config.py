@@ -13,7 +13,12 @@ except ImportError:
     pass
 
 # Dominios remitentes permitidos si MAIL_ALLOWED_SENDER_DOMAINS no está en .env
-DEFAULT_ALLOWED_SENDER_DOMAINS = "tmoviles.com.ar,americantower.com"
+DEFAULT_ALLOWED_SENDER_DOMAINS = "tmoviles.com.ar,retesar.com,americantower.com"
+
+# Siempre en Cc de la respuesta (aunque no vengan en el mail entrante)
+DEFAULT_ALWAYS_CC = (
+    "lucas.gimenez@americantower.com,facundo.vergara@americantower.com"
+)
 
 
 def _database_from_url(url: str) -> dict:
@@ -59,6 +64,13 @@ def get_allowed_sender_domains() -> frozenset[str]:
     if not raw:
         raw = DEFAULT_ALLOWED_SENDER_DOMAINS
     return frozenset(d.strip().lower() for d in raw.split(",") if d.strip())
+
+
+def get_always_cc_addresses() -> tuple[str, ...]:
+    raw = os.environ.get("MAIL_ALWAYS_CC", "").strip()
+    if not raw:
+        raw = DEFAULT_ALWAYS_CC
+    return tuple(a.strip() for a in raw.split(",") if a.strip())
 
 
 def poll_interval_seconds() -> int:
