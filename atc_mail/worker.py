@@ -14,7 +14,7 @@ from atc_mail.config import (
 from atc_mail.cto_inventory import build_timbrado_reply, consultar_cto_puertos
 from atc_mail.mail_imap import fetch_unseen_mails, mark_seen
 from atc_mail.mail_smtp import send_timbrado_reply
-from atc_mail.parser import parse_timbrado_subject
+from atc_mail.parser import is_standalone_timbrado_request, parse_timbrado_subject
 from atc_mail.processed import is_processed, mark_processed
 from atc_mail.security import sender_allowed
 
@@ -50,6 +50,20 @@ def process_once() -> int:
                 "Remitente no permitido (dominios: %s), skip: %s",
                 ", ".join(sorted(get_allowed_sender_domains())),
                 inbound.from_header,
+            )
+            if not dry_run():
+                mark_seen(uid)
+            continue
+
+        if not is_standalone_timbrado_request(
+            inbound.subject,
+            inbound.in_reply_to,
+            inbound.references,
+        ):
+            logger.info(
+                "Mail en hilo (reacción/reply), skip: %s | subject=%r",
+                inbound.from_header,
+                inbound.subject,
             )
             if not dry_run():
                 mark_seen(uid)
