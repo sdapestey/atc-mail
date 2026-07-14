@@ -79,6 +79,7 @@ cp .env.example .env
 | `DRY_RUN` | `1` = simular sin enviar mail |
 | `POLL_INTERVAL_SECONDS` | Intervalo del worker (default 60) |
 | `PROCESSED_DB_PATH` | SQLite de idempotencia |
+| `TIMBRADO_QUERIES_CSV_PATH` | CSV de historial de consultas (default: `data/timbrado_queries.csv` junto a processed.db) |
 
 Ver `.env.example` para firma, Gmail de prueba y opciones de mail.
 
@@ -100,12 +101,24 @@ docker compose up -d --build
 docker compose logs -f atc-mail
 ```
 
-Estado persistente en volumen `atc-mail-data` (`processed.db`).
+Estado persistente en volumen `atc-mail-data` (`processed.db` y `timbrado_queries.csv`).
 
 ## Tests
 
 ```bash
 pytest
+```
+
+## Historial de consultas (CSV)
+
+Cada respuesta enviada con éxito agrega una línea a `timbrado_queries.csv` (mismo directorio que `processed.db`, o `TIMBRADO_QUERIES_CSV_PATH`).
+
+Columnas: `consulted_at` (UTC ISO 8601), `sender_email`, `sender_name`, `cto`, `ports_found`, `reply_to`, `reply_cc`, `message_id`, `status`.
+
+Abrir el archivo en Excel para estadísticas. En Docker:
+
+```bash
+docker compose exec atc-mail cat /app/data/timbrado_queries.csv
 ```
 
 ## Estructura
@@ -121,6 +134,7 @@ atc_mail/
   recipients.py      # From + Cc
   signature.py       # firma HTML
   processed.py       # idempotencia SQLite
+  query_log.py       # historial CSV de consultas
 scripts/
   run_once.py        # una pasada manual
   build_signature_logo.py

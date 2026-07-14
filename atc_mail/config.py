@@ -86,5 +86,13 @@ def processed_db_path() -> Path:
     return Path(raw).expanduser().resolve()
 
 
+def timbrado_queries_csv_path() -> Path:
+    """CSV de historial de consultas. Default: mismo directorio que processed.db."""
+    raw = os.environ.get("TIMBRADO_QUERIES_CSV_PATH", "").strip()
+    if raw:
+        return Path(raw).expanduser().resolve()
+    return processed_db_path().parent / "timbrado_queries.csv"
+
+
 def log_level() -> str:
     return os.environ.get("LOG_LEVEL", "INFO").strip().upper()

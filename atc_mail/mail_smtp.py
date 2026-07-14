@@ -15,7 +15,7 @@ from atc_mail.signature import (
 )
 from atc_mail.mail_imap import InboundMail
 from atc_mail.parser import parse_timbrado_subject
-from atc_mail.recipients import collect_reply_recipients
+from atc_mail.recipients import ReplyRecipients, collect_reply_recipients
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +58,7 @@ def send_timbrado_reply(
     cto: str,
     body_text: str,
     body_html: str | None = None,
-) -> None:
+) -> ReplyRecipients:
     cfg = get_mail_config()
     if not cfg["password"]:
         raise RuntimeError("MAIL_PASSWORD no configurado")
@@ -98,3 +98,4 @@ def send_timbrado_reply(
         msg.get("Cc", ""),
         cto,
     )
+    return recipients

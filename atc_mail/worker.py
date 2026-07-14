@@ -16,6 +16,7 @@ from atc_mail.mail_imap import fetch_unseen_mails, mark_seen
 from atc_mail.mail_smtp import send_timbrado_reply
 from atc_mail.parser import is_standalone_timbrado_request, parse_timbrado_subject
 from atc_mail.processed import is_processed, mark_processed
+from atc_mail.query_log import append_query_log
 from atc_mail.security import sender_allowed
 
 logger = logging.getLogger(__name__)
@@ -98,7 +99,7 @@ def process_once() -> int:
             continue
 
         try:
-            send_timbrado_reply(
+            recipients = send_timbrado_reply(
                 inbound,
                 cto=cto,
                 body_text=reply.text,
@@ -107,6 +108,23 @@ def process_once() -> int:
         except Exception:
             logger.exception("Error enviando reply para CTO %s", cto)
             continue
+
+        try:
+            append_query_log(
+                from_header=inbound.from_header,
+                cto=cto,
+                ports_found=len(rows),
+                reply_to=", ".join(recipients.to),
+                reply_cc=", ".join(recipients.cc),
+                message_id=mid,
+                status="sent",
+            )
+        except Exception:
+            logger.warning(
+                "No se pudo appendear historial CSV para CTO %s",
+                cto,
+                exc_info=True,
+            )
 
         mark_processed(mid, uid, cto)
         mark_seen(uid)
