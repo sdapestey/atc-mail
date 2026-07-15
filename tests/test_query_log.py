@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import csv
-from pathlib import Path
 
 from atc_mail.config import timbrado_queries_csv_path
 from atc_mail.query_log import CSV_HEADERS, append_query_log, parse_sender
+from atc_mail.sites import site_from_cto
 
 
 def test_parse_sender_with_name():
@@ -24,6 +24,20 @@ def test_parse_sender_empty():
     email, name = parse_sender(None)
     assert email == ""
     assert name == ""
+
+
+def test_site_from_cto_known():
+    assert site_from_cto("SI01-FATC-8-101093") == "San Isidro"
+    assert site_from_cto("sf01-fatc-8-102732") == "San Fernando"
+    assert site_from_cto("TG01-FATC-8-109725") == "Tigre"
+    assert site_from_cto("ES01-FATC-8-105270") == "Escobar"
+    assert site_from_cto("MO01-FATC-8-1") == "Moreno"
+
+
+def test_site_from_cto_unknown():
+    assert site_from_cto("XX01-FATC-8-1") == ""
+    assert site_from_cto("") == ""
+    assert site_from_cto(None) == ""
 
 
 def test_csv_path_default_beside_processed(monkeypatch, tmp_path):
@@ -45,7 +59,6 @@ def test_append_creates_header_and_row(tmp_path):
     path = append_query_log(
         from_header="Lucas <lucas.gimenez@americantower.com>",
         cto="TG01-FATC-8-109725",
-        ports_found=8,
         reply_to="lucas.gimenez@americantower.com",
         reply_cc="facundo.vergara@americantower.com",
         message_id="<abc@mail>",
@@ -63,7 +76,8 @@ def test_append_creates_header_and_row(tmp_path):
     assert row["sender_email"] == "lucas.gimenez@americantower.com"
     assert row["sender_name"] == "Lucas"
     assert row["cto"] == "TG01-FATC-8-109725"
-    assert row["ports_found"] == "8"
+    assert row["site"] == "Tigre"
+    assert "ports_found" not in row
     assert row["reply_to"] == "lucas.gimenez@americantower.com"
     assert row["reply_cc"] == "facundo.vergara@americantower.com"
     assert row["message_id"] == "<abc@mail>"
@@ -75,14 +89,12 @@ def test_append_second_row_no_duplicate_header(tmp_path):
     csv_file = tmp_path / "timbrado_queries.csv"
     append_query_log(
         from_header="a@americantower.com",
-        cto="AA01-FATC-8-1",
-        ports_found=1,
+        cto="SI01-FATC-8-1",
         csv_path=csv_file,
     )
     append_query_log(
         from_header="b@americantower.com",
         cto="BB01-FATC-8-2",
-        ports_found=2,
         csv_path=csv_file,
     )
     text = csv_file.read_text(encoding="utf-8")
@@ -90,5 +102,7 @@ def test_append_second_row_no_duplicate_header(tmp_path):
     with csv_file.open(encoding="utf-8", newline="") as fh:
         rows = list(csv.DictReader(fh))
     assert len(rows) == 2
-    assert rows[0]["cto"] == "AA01-FATC-8-1"
+    assert rows[0]["cto"] == "SI01-FATC-8-1"
+    assert rows[0]["site"] == "San Isidro"
     assert rows[1]["cto"] == "BB01-FATC-8-2"
+    assert rows[1]["site"] == ""

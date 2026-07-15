@@ -8,6 +8,7 @@ from email.utils import parseaddr
 from pathlib import Path
 
 from atc_mail.config import timbrado_queries_csv_path
+from atc_mail.sites import site_from_cto
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ CSV_HEADERS = (
     "sender_email",
     "sender_name",
     "cto",
-    "ports_found",
+    "site",
     "reply_to",
     "reply_cc",
     "message_id",
@@ -34,11 +35,11 @@ def append_query_log(
     *,
     from_header: str | None,
     cto: str,
-    ports_found: int,
     reply_to: str = "",
     reply_cc: str = "",
     message_id: str = "",
     status: str = "sent",
+    site: str | None = None,
     csv_path: Path | None = None,
 ) -> Path:
     """
@@ -52,6 +53,7 @@ def append_query_log(
 
     sender_email, sender_name = parse_sender(from_header)
     consulted_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    site_val = site if site is not None else site_from_cto(cto)
 
     write_header = not path.exists() or path.stat().st_size == 0
     with path.open("a", newline="", encoding="utf-8") as fh:
@@ -64,7 +66,7 @@ def append_query_log(
                 "sender_email": sender_email,
                 "sender_name": sender_name,
                 "cto": cto,
-                "ports_found": ports_found,
+                "site": site_val,
                 "reply_to": reply_to,
                 "reply_cc": reply_cc,
                 "message_id": message_id,

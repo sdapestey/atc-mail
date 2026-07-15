@@ -113,7 +113,6 @@ def process_once() -> int:
             append_query_log(
                 from_header=inbound.from_header,
                 cto=cto,
-                ports_found=len(rows),
                 reply_to=", ".join(recipients.to),
                 reply_cc=", ".join(recipients.cc),
                 message_id=mid,
