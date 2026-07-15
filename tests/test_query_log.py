@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import csv
 
-from atc_mail.config import timbrado_queries_csv_path
+from atc_mail.config import timbrado_historico_csv_path
 from atc_mail.query_log import CSV_HEADERS, append_query_log, parse_sender
 from atc_mail.sites import site_from_cto
 
@@ -43,19 +43,20 @@ def test_site_from_cto_unknown():
 def test_csv_path_default_beside_processed(monkeypatch, tmp_path):
     db = tmp_path / "data" / "processed.db"
     monkeypatch.setenv("PROCESSED_DB_PATH", str(db))
+    monkeypatch.delenv("TIMBRADO_HISTORICO_CSV_PATH", raising=False)
     monkeypatch.delenv("TIMBRADO_QUERIES_CSV_PATH", raising=False)
-    path = timbrado_queries_csv_path()
-    assert path == (tmp_path / "data" / "timbrado_queries.csv").resolve()
+    path = timbrado_historico_csv_path()
+    assert path == (tmp_path / "data" / "timbrado_historico.csv").resolve()
 
 
 def test_csv_path_explicit_override(monkeypatch, tmp_path):
-    custom = tmp_path / "custom" / "queries.csv"
-    monkeypatch.setenv("TIMBRADO_QUERIES_CSV_PATH", str(custom))
-    assert timbrado_queries_csv_path() == custom.resolve()
+    custom = tmp_path / "custom" / "historico.csv"
+    monkeypatch.setenv("TIMBRADO_HISTORICO_CSV_PATH", str(custom))
+    assert timbrado_historico_csv_path() == custom.resolve()
 
 
 def test_append_creates_header_and_row(tmp_path):
-    csv_file = tmp_path / "subdir" / "timbrado_queries.csv"
+    csv_file = tmp_path / "subdir" / "timbrado_historico.csv"
     path = append_query_log(
         from_header="Lucas <lucas.gimenez@americantower.com>",
         cto="TG01-FATC-8-109725",
@@ -82,11 +83,11 @@ def test_append_creates_header_and_row(tmp_path):
     assert row["reply_cc"] == "facundo.vergara@americantower.com"
     assert row["message_id"] == "<abc@mail>"
     assert row["status"] == "sent"
-    assert row["consulted_at"].endswith("Z")
+    assert row["consulted_at"].endswith("-03:00")
 
 
 def test_append_second_row_no_duplicate_header(tmp_path):
-    csv_file = tmp_path / "timbrado_queries.csv"
+    csv_file = tmp_path / "timbrado_historico.csv"
     append_query_log(
         from_header="a@americantower.com",
         cto="SI01-FATC-8-1",
