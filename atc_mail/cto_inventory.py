@@ -204,31 +204,53 @@ def _resolve_ubicacion(cto: str, ubicacion: CtoUbicacion | None) -> tuple[str, C
     return cto_norm, ubicacion
 
 
+_VISIBLE_OPERADOR = "TASA"
+_OCUPADO_LABEL = "OCUPADO"
+
+_TD = 'style="padding:6px 10px;border:1px solid #ccc;"'
+_TD_CENTER = 'style="padding:6px 10px;border:1px solid #ccc;text-align:center;"'
+
+
+def _port_details_visible(row: CtoPortRow) -> bool:
+    """TASA y FREE muestran detalle; otros operadores se ocultan como OCUPADO."""
+    status = (row.status or "").strip().upper()
+    if status == "FREE":
+        return True
+    return (row.operador or "").strip().upper() == _VISIBLE_OPERADOR
+
+
 def _format_ports_text(rows: list[CtoPortRow]) -> list[str]:
     lines = ["Puertos:"]
     for r in rows:
-        lines.append(f"  OUT {r.out} · AID {r.aid} · {r.status} · {r.operador}")
+        if _port_details_visible(r):
+            lines.append(f"  OUT {r.out} · AID {r.aid} · {r.status} · {r.operador}")
+        else:
+            lines.append(f"  OUT {r.out} · {_OCUPADO_LABEL}")
     return lines
 
 
 def _format_ports_html(rows: list[CtoPortRow]) -> str:
     body_rows = []
     for r in rows:
-        body_rows.append(
-            "<tr>"
-            f'<td style="padding:6px 10px;border:1px solid #ccc;text-align:center;">{r.out}</td>'
-            f'<td style="padding:6px 10px;border:1px solid #ccc;">{escape(r.aid)}</td>'
-            f'<td style="padding:6px 10px;border:1px solid #ccc;">{escape(r.status)}</td>'
-            f'<td style="padding:6px 10px;border:1px solid #ccc;">{escape(r.operador)}</td>'
-            "</tr>"
-        )
+        out_cell = f"<td {_TD_CENTER}>{r.out}</td>"
+        if _port_details_visible(r):
+            detail = (
+                f"<td {_TD}>{escape(r.aid)}</td>"
+                f"<td {_TD}>{escape(r.status)}</td>"
+                f"<td {_TD}>{escape(r.operador)}</td>"
+            )
+        else:
+            detail = (
+                f'<td {_TD_CENTER} colspan="3">{escape(_OCUPADO_LABEL)}</td>'
+            )
+        body_rows.append(f"<tr>{out_cell}{detail}</tr>")
     return (
         '<table style="border-collapse:collapse;margin-top:12px;font-size:14px;">'
         "<thead><tr style=\"background:#f3f4f6;\">"
-        '<th style="padding:8px 10px;border:1px solid #ccc;">OUT</th>'
-        '<th style="padding:8px 10px;border:1px solid #ccc;">AID</th>'
-        '<th style="padding:8px 10px;border:1px solid #ccc;">STATUS</th>'
-        '<th style="padding:8px 10px;border:1px solid #ccc;">Operador</th>'
+        f"<th {_TD}>OUT</th>"
+        f"<th {_TD}>AID</th>"
+        f"<th {_TD}>STATUS</th>"
+        f"<th {_TD}>Operador</th>"
         "</tr></thead><tbody>"
         + "".join(body_rows)
         + "</tbody></table>"

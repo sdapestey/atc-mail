@@ -49,3 +49,31 @@ def test_format_table_with_mixed_statuses():
     assert html.count("<p>") == 0 or "Timbrado CTO" in html
     assert "NOC Bot" in html
     assert "#D0DDFF" in html
+
+
+def test_format_hides_non_tasa_as_ocupado():
+    rows = [
+        CtoPortRow(out=1, aid="1051563426", status="IN SERVICE", operador="TASA"),
+        CtoPortRow(out=5, aid="123086340", status="IN SERVICE", operador="DIRECTV"),
+        CtoPortRow(out=8, aid="127711116", status="IN SERVICE", operador="DIRECTV"),
+        CtoPortRow(out=2, aid="-", status="FREE", operador="-"),
+    ]
+    ubicacion = CtoUbicacion(direccion=None, lat=None, lon=None)
+    body = format_timbrado_reply("TG02-FATC-8-103620", rows, ubicacion=ubicacion)
+    assert "OUT 1 · AID 1051563426 · IN SERVICE · TASA" in body
+    assert "OUT 5 · OCUPADO" in body
+    assert "OUT 8 · OCUPADO" in body
+    assert "OUT 2 · AID - · FREE · -" in body
+    assert "DIRECTV" not in body
+    assert "123086340" not in body
+    assert "127711116" not in body
+
+    html = build_timbrado_reply(
+        "TG02-FATC-8-103620", rows, ubicacion=ubicacion
+    ).html
+    assert "colspan=\"3\"" in html
+    assert "OCUPADO" in html
+    assert "DIRECTV" not in html
+    assert "123086340" not in html
+    assert "1051563426" in html
+    assert "TASA" in html

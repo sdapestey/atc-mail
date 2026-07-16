@@ -50,6 +50,8 @@ Incluye:
 
 - Identificador CTO, fuente de inventario, dirección postal, enlace a Maps y coordenadas.
 - Tabla HTML: OUT, AID, STATUS (`FREE`, `RESERVED`, `IN SERVICE`), operador.
+  - Detalle visible solo para **TASA** y puertos **FREE**.
+  - Otros operadores (DIRECTV, IPLAN, etc.) se muestran como **OCUPADO** (sin AID/STATUS/nombre).
 - Firma **NOC Bot** / American Tower Corporation.
 
 ## Requisitos
