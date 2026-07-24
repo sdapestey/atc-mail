@@ -42,6 +42,27 @@ Asunto (mayúsculas/minúsculas indistinto). Las consultas nuevas **no** deben l
 TIMBRADO CTO ES01-FATC-8-105270
 ```
 
+### CTO de calle vs edificio
+
+| Tipo | Patrón | Ejemplo |
+|------|--------|---------|
+| Calle | `…-FATC-8-…` | `TG02-FATC-8-103620` |
+| Edificio | `…-FATC-7-…` (+ sufijo opcional) | `SM02-FATC-7-050321-TE` |
+
+El número después de `FATC` (7 u 8) y el identificador numérico son libres. En edificio puede haber un **sufijo opcional** (piso / ubicación):
+
+| Sufijo | Ejemplo |
+|--------|---------|
+| (sin sufijo) | `SM02-FATC-7-010012` |
+| `TE`, `PB`, `ES`, `SU`, `PO`, `AZ`, `E` | `SF01-FATC-7-040052-PB` |
+| `P1`…`P12`, `S1` | `SF01-FATC-7-050416-P12` |
+
+```text
+TIMBRADO CTO SM02-FATC-7-050321-TE
+TIMBRADO CTO SF01-FATC-7-010054-P3
+TIMBRADO CTO VL01-FATC-7-010109-E
+```
+
 Ejemplo válido en minúsculas: `timbrado cto si01-fatc-8-101093`.
 
 ## Respuesta

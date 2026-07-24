@@ -4,7 +4,8 @@ from __future__ import annotations
 import re
 
 TIMBRADO_SUBJECT_RE = re.compile(
-    r"^\s*TIMBRADO\s+CTO\s+(?P<cto>[A-Za-z0-9]+-FATC-\d+-\d+)\s*$",
+    r"^\s*TIMBRADO\s+CTO\s+"
+    r"(?P<cto>[A-Za-z0-9]+-FATC-\d+-\d+(?:-[A-Za-z0-9]+)?)\s*$",
     re.IGNORECASE,
 )
 

@@ -5,6 +5,37 @@ def test_parse_valid_subject():
     assert parse_timbrado_subject("TIMBRADO CTO ES01-FATC-8-105270") == "ES01-FATC-8-105270"
 
 
+def test_parse_valid_subject_with_suffix():
+    assert (
+        parse_timbrado_subject("TIMBRADO CTO SM02-FATC-7-050321-TE")
+        == "SM02-FATC-7-050321-TE"
+    )
+    assert (
+        parse_timbrado_subject("timbrado cto sm02-fatc-7-050321-te")
+        == "SM02-FATC-7-050321-TE"
+    )
+    assert (
+        parse_timbrado_subject("TIMBRADO CTO SF01-FATC-7-040052-PB")
+        == "SF01-FATC-7-040052-PB"
+    )
+    assert (
+        parse_timbrado_subject("TIMBRADO CTO SF01-FATC-7-050416-P12")
+        == "SF01-FATC-7-050416-P12"
+    )
+    assert (
+        parse_timbrado_subject("TIMBRADO CTO VL01-FATC-7-010109-E")
+        == "VL01-FATC-7-010109-E"
+    )
+    assert (
+        parse_timbrado_subject("TIMBRADO CTO SM02-FATC-7-010012")
+        == "SM02-FATC-7-010012"
+    )
+    assert (
+        parse_timbrado_subject("TIMBRADO CTO SI01-FATC-7-010526-AZ")
+        == "SI01-FATC-7-010526-AZ"
+    )
+
+
 def test_parse_valid_subject_lowercase():
     assert parse_timbrado_subject("timbrado cto tg01-fatc-1-000987") == "TG01-FATC-1-000987"
 
@@ -37,9 +68,9 @@ def test_parse_invalid_prefix_only():
     assert parse_timbrado_subject("Consulta timbrado ES01-FATC-8-105270") is None
 
 
-def test_standalone_request_valid():
+def test_standalone_request_with_te_suffix():
     assert is_standalone_timbrado_request(
-        "TIMBRADO CTO ES01-FATC-8-105270",
+        "TIMBRADO CTO SM02-FATC-7-050321-TE",
         None,
         None,
     )
