@@ -82,11 +82,15 @@ cp .env.example .env
 | `MAIL_ALLOWED_SENDER_DOMAINS` | Dominios From permitidos (ver tabla arriba) |
 | `MAIL_ALWAYS_CC` | Siempre en Cc de la respuesta |
 | `DRY_RUN` | `1` = simular sin enviar mail |
-| `POLL_INTERVAL_SECONDS` | Intervalo del worker (default 60) |
+| `POLL_INTERVAL_SECONDS` | Intervalo entre ciclos (default 30; mínimo 10) |
 | `PROCESSED_DB_PATH` | SQLite de idempotencia |
 | `TIMBRADO_HISTORICO_CSV_PATH` | CSV de historial (default: `data/timbrado_historico.csv` junto a processed.db) |
 
 Ver `.env.example` para firma, Gmail y opciones de mail.
+
+### Rendimiento IMAP
+
+Cada ciclo solo busca mails **UNSEEN** con asunto `TIMBRADO CTO` y descarga **cabeceras** (no el body). Los ya respondidos quedan marcados como leídos y no se vuelven a bajar. Así la bandeja puede acumular historial sin ralentizar el bot.
 
 ## Prueba local (dry-run)
 

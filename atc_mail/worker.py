@@ -12,7 +12,7 @@ from atc_mail.config import (
     poll_interval_seconds,
 )
 from atc_mail.cto_inventory import build_timbrado_reply, consultar_cto_puertos
-from atc_mail.mail_imap import fetch_unseen_mails, mark_seen
+from atc_mail.mail_imap import fetch_timbrado_mails, imap_session, mark_seen
 from atc_mail.mail_smtp import send_timbrado_reply
 from atc_mail.parser import is_standalone_timbrado_request, parse_timbrado_subject
 from atc_mail.processed import is_processed, mark_processed
@@ -31,103 +31,106 @@ def _setup_logging() -> None:
 
 
 def process_once() -> int:
-    """Procesa UNSEEN una vez. Devuelve cantidad de respuestas enviadas (o simuladas)."""
+    """Una pasada IMAP. Devuelve cantidad de respuestas enviadas (o simuladas)."""
     handled = 0
-    mails = fetch_unseen_mails()
-    logger.info("Mails TIMBRADO CTO en bandeja: %d", len(mails))
+    with imap_session() as client:
+        mails = fetch_timbrado_mails(client)
+        logger.info("Mails TIMBRADO CTO UNSEEN: %d", len(mails))
 
-    for inbound in mails:
-        mid = inbound.message_id
-        uid = inbound.imap_uid
+        for inbound in mails:
+            mid = inbound.message_id
+            uid = inbound.imap_uid
 
-        if is_processed(mid, uid):
-            logger.debug("Ya procesado: message-id=%s uid=%s", mid, uid)
-            if not dry_run():
-                mark_seen(uid)
-            continue
+            if is_processed(mid, uid):
+                logger.debug("Ya procesado: message-id=%s uid=%s", mid, uid)
+                if not dry_run():
+                    mark_seen(client, uid)
+                continue
 
-        if not sender_allowed(inbound.from_header):
-            logger.info(
-                "Remitente no permitido (dominios: %s), skip: %s",
-                ", ".join(sorted(get_allowed_sender_domains())),
-                inbound.from_header,
-            )
-            if not dry_run():
-                mark_seen(uid)
-            continue
+            if not sender_allowed(inbound.from_header):
+                logger.info(
+                    "Remitente no permitido (dominios: %s), skip: %s",
+                    ", ".join(sorted(get_allowed_sender_domains())),
+                    inbound.from_header,
+                )
+                if not dry_run():
+                    mark_seen(client, uid)
+                continue
 
-        if not is_standalone_timbrado_request(
-            inbound.subject,
-            inbound.in_reply_to,
-            inbound.references,
-        ):
-            logger.info(
-                "Mail en hilo (reacción/reply), skip: %s | subject=%r",
-                inbound.from_header,
+            if not is_standalone_timbrado_request(
                 inbound.subject,
-            )
-            if not dry_run():
-                mark_seen(uid)
-            continue
+                inbound.in_reply_to,
+                inbound.references,
+            ):
+                logger.info(
+                    "Mail en hilo (reacción/reply), skip: %s | subject=%r",
+                    inbound.from_header,
+                    inbound.subject,
+                )
+                if not dry_run():
+                    mark_seen(client, uid)
+                continue
 
-        cto = parse_timbrado_subject(inbound.subject)
-        if not cto:
-            logger.debug(
-                "Asunto no es TIMBRADO CTO, skip: %r",
-                inbound.subject,
-            )
-            continue
+            cto = parse_timbrado_subject(inbound.subject)
+            if not cto:
+                logger.debug(
+                    "Asunto no es TIMBRADO CTO, skip: %r",
+                    inbound.subject,
+                )
+                if not dry_run():
+                    mark_seen(client, uid)
+                continue
 
-        try:
-            rows = consultar_cto_puertos(cto)
-            reply = build_timbrado_reply(cto, rows)
-        except Exception:
-            logger.exception("Error consultando CTO %s", cto)
-            continue
+            try:
+                rows = consultar_cto_puertos(cto)
+                reply = build_timbrado_reply(cto, rows)
+            except Exception:
+                logger.exception("Error consultando CTO %s", cto)
+                continue
 
-        logger.info(
-            "Timbrado %s | from=%s | filas=%d | dry_run=%s",
-            cto,
-            inbound.from_header,
-            len(rows),
-            dry_run(),
-        )
-
-        if dry_run():
-            logger.info("--- DRY RUN respuesta ---\n%s\n--- fin ---", reply.text)
-            handled += 1
-            continue
-
-        try:
-            recipients = send_timbrado_reply(
-                inbound,
-                cto=cto,
-                body_text=reply.text,
-                body_html=reply.html,
-            )
-        except Exception:
-            logger.exception("Error enviando reply para CTO %s", cto)
-            continue
-
-        try:
-            append_query_log(
-                from_header=inbound.from_header,
-                cto=cto,
-                reply_to=", ".join(recipients.to),
-                reply_cc=", ".join(recipients.cc),
-                message_id=mid,
-                status="sent",
-            )
-        except Exception:
-            logger.warning(
-                "No se pudo appendear historial CSV para CTO %s",
+            logger.info(
+                "Timbrado %s | from=%s | filas=%d | dry_run=%s",
                 cto,
-                exc_info=True,
+                inbound.from_header,
+                len(rows),
+                dry_run(),
             )
 
-        mark_processed(mid, uid, cto)
-        mark_seen(uid)
-        handled += 1
+            if dry_run():
+                logger.info("--- DRY RUN respuesta ---\n%s\n--- fin ---", reply.text)
+                handled += 1
+                continue
+
+            try:
+                recipients = send_timbrado_reply(
+                    inbound,
+                    cto=cto,
+                    body_text=reply.text,
+                    body_html=reply.html,
+                )
+            except Exception:
+                logger.exception("Error enviando reply para CTO %s", cto)
+                continue
+
+            try:
+                append_query_log(
+                    from_header=inbound.from_header,
+                    cto=cto,
+                    reply_to=", ".join(recipients.to),
+                    reply_cc=", ".join(recipients.cc),
+                    message_id=mid,
+                    status="sent",
+                )
+            except Exception:
+                logger.warning(
+                    "No se pudo appendear historial CSV para CTO %s",
+                    cto,
+                    exc_info=True,
+                )
+
+            mark_processed(mid, uid, cto)
+            mark_seen(client, uid)
+            handled += 1
 
     return handled
 

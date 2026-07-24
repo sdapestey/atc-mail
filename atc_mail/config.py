@@ -74,7 +74,7 @@ def get_always_cc_addresses() -> tuple[str, ...]:
 
 
 def poll_interval_seconds() -> int:
-    return max(10, int(os.environ.get("POLL_INTERVAL_SECONDS", "60")))
+    return max(10, int(os.environ.get("POLL_INTERVAL_SECONDS", "30")))
 
 
 def dry_run() -> bool:
